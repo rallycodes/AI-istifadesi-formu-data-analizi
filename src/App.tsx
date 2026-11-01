@@ -51,6 +51,11 @@ import {
 } from "@/components/ui/tooltip";
 import { InfoBubble } from "@/components/InfoBubble";
 import { StyledSelect } from "@/components/StyledSelect";
+import {
+  computeDashboardData,
+  generateExportCsv,
+  type DashboardData,
+} from "@/lib/surveyEngine";
 
 export type Row = {
   label: string;
@@ -574,8 +579,14 @@ function Methodology({
 
 export default function App() {
   const [page, setPage] = useState(initialPage);
-  const [data, setData] = useState<Data | null>(null);
-  const [busy, setBusy] = useState(true);
+  const [data, setData] = useState<Data | null>(() => {
+    try {
+      return computeDashboardData() as unknown as Data;
+    } catch {
+      return null;
+    }
+  });
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -669,22 +680,59 @@ export default function App() {
       .then((r) => {
         if (!r.ok)
           throw new Error(
-            "Məlumatlar yüklənmədi. Mənbəni yoxlayıb yenidən cəhd edin.",
+            "Server cavab vermədi, lokal məlumat bazasından istifadə edilir.",
           );
         return r.json();
       })
-      .then(setData)
+      .then((remoteData) => {
+        setData(remoteData);
+        setError("");
+      })
       .catch((e) => {
-        if (e.name !== "AbortError") setError(e.message);
+        if (e.name === "AbortError") return;
+        // Graceful fallback to client-side survey engine
+        try {
+          const fallbackData = computeDashboardData(filters);
+          setData(fallbackData as unknown as Data);
+          setError("");
+        } catch (fallbackErr) {
+          setError(
+            "Məlumatlar yüklənmədi. Mənbəni yoxlayıb yenidən cəhd edin.",
+          );
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setBusy(false);
       });
     return () => controller.abort();
-  }, [query, reload]);
+  }, [query, reload, filters]);
   const navigate = (id: string) => {
     location.hash = id;
     setMobileNav(false);
+  };
+  const handleExport = (e: React.MouseEvent) => {
+    if (data) {
+      e.preventDefault();
+      try {
+        const csvStr = generateExportCsv(data as unknown as DashboardData);
+        const blob = new Blob(["\uFEFF" + csvStr], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const filterSuffix = query
+          ? "_" + query.replace(/[^a-zA-Z0-9]/g, "_")
+          : "";
+        a.download = `ai_istifadesi_hesabat${filterSuffix}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        window.location.href = `/api/export?${query}`;
+      }
+    }
   };
 
   return (
@@ -798,11 +846,12 @@ export default function App() {
               >
                 <RefreshCw size={17} className={busy ? "spin" : ""} />
               </TipButton>
-              <Button className="export-button" asChild>
+              <Button className="export-button" onClick={handleExport} asChild>
                 <a
                   href={`/api/export?${query}`}
                   download
                   aria-label="CSV hesabatı"
+                  onClick={handleExport}
                 >
                   <ArrowDownToLine size={16} />
                   <span>CSV hesabatı</span>
