@@ -22,7 +22,6 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
-  Sparkles,
   Sun,
   Users,
   X,
@@ -183,21 +182,21 @@ const filterLabels: Record<string, string> = {
 };
 const panelHelp: Record<string, string> = {
   "Ən çox istifadə olunan AI alətləri":
-    "Hər faiz seçilmiş AI istifadəçilərinin neçə faizinin həmin aləti seçdiyini göstərir. Bir şəxs bir neçə alət seçə bilər; faizlər 100%-dən çox toplana bilər. Bu, bazar payı deyil.",
+    "Hər faiz AI-dan istifadə edən respondentlərin neçə faizinin həmin aləti seçdiyini göstərir. Bir respondent bir neçə alət seçə bilər; faizlər 100%-dən çox toplana bilər. Bu, bazar payı deyil.",
   "AI istifadəsinin bölgüsü":
-    "Bütün seçilmiş respondentlərin AI istifadə statusu. “Bəli” yalnız hazırda istifadə etdiyini bildirənlərdir. Eşidib istifadə etməyənlər aktiv istifadəçi sayılmır.",
+    "Bütün respondentlərin AI istifadə statusu. “Bəli” hazırda süni intellektdən istifadə etdiyini bildirən respondentlərdir.",
   "Sorğudan əsas müşahidələr":
-    "Davranış müşahidələri AI istifadəçiləri, ödəniş istəyi isə bütün seçilmiş respondentlər üzrə hesablanır. Hər sətrin say və bazasına baxın; bunlar şəxslərin öz bildirdiyi cavablardır.",
+    "Davranış sualları AI-dan istifadə edən respondentlər, ödəniş istəyi isə bütün respondentlər üzrə hesablanır. Hər sətrin say və bazasına baxın; bunlar respondentlərin öz cavablarıdır.",
   "Tədqiqat haqqında":
     "Mənbədəki ümumi nümunə filtrlənmiş nümunədən fərqlənə bilər. Son cavab mənbədəki ən yeni sorğu tarixidir; səhifənin son açılma vaxtı deyil.",
   "AI cavablarına etibar":
     "1 aşağı, 5 yüksək etibardır. Orta bal yalnız 1–5 aralığındakı etibarlı rəqəmli cavablardan hesablanır. Etibar AI cavablarının faktiki düzgünlüyü deyil.",
   "Yaş qrupları üzrə AI istifadəsi":
-    "Hər faiz həmin yaş qrupundakı istifadəçilərin payıdır, bütün sorğunun payı deyil. Kiçik nümunələri birləşdirmək üçün 35–44 və 45+ qrupları 35+ kimi göstərilir.",
+    "Hər faiz həmin yaş qrupundakı respondentlərin payıdır, bütün sorğunun payı deyil. Kiçik nümunələri birləşdirmək üçün 35–44 və 45+ qrupları 35+ kimi göstərilir.",
   "Sahələr üzrə orta etibar":
     "Hər sahədə etibarlı rəqəmli cavabların ortasıdır. Qrup ölçüləri fərqlidir. Bu sıralama statistik əhəmiyyət və ya bütün sahə barədə nəticə demək deyil.",
   "Alətlərin tam müqayisəsi":
-    "Say hər aləti seçmiş fərqli respondentlərin sayıdır. Məxrəc seçilmiş AI istifadəçiləridir. Axtarış yalnız bu cədvəli daraldır, səhifənin əsas bazasını dəyişmir.",
+    "Say hər aləti seçmiş fərqli respondentlərin sayıdır. Məxrəc AI-dan istifadə edən respondentlərdir (n=108). Axtarış yalnız bu cədvəli daraldır, səhifənin əsas bazasını dəyişmir.",
 };
 function Logo({ name, large = false }: { name: string; large?: boolean }) {
   const m = meta[name];
@@ -297,37 +296,22 @@ const questionGroups: Record<string, string[]> = {
 function AllResponses({ data, page }: { data: Data; page: string }) {
   const [isOpen, setIsOpen] = useState(true);
   const [search, setSearch] = useState("");
-  const [audience, setAudience] = useState<"all" | "ai" | "general">("all");
 
   const fields = questionGroups[page] || [];
 
   const filteredFields = useMemo(() => {
+    if (!search.trim()) return fields;
+    const query = search.toLowerCase().trim();
     return fields.filter((field) => {
       const meta = data.questionMeta[field];
       if (!meta) return false;
-
-      // Audience filter
-      if (audience === "ai" && !meta.activeOnly) return false;
-      if (audience === "general" && meta.activeOnly) return false;
-
-      // Search filter
-      if (search.trim()) {
-        const query = search.toLowerCase().trim();
-        const questionMatch = meta.question.toLowerCase().includes(query);
-        const optionsMatch = (data.distributions[field] || []).some((r) =>
-          r.label.toLowerCase().includes(query),
-        );
-        if (!questionMatch && !optionsMatch) return false;
-      }
-      return true;
+      const questionMatch = meta.question.toLowerCase().includes(query);
+      const optionsMatch = (data.distributions[field] || []).some((r) =>
+        r.label.toLowerCase().includes(query),
+      );
+      return questionMatch || optionsMatch;
     });
-  }, [fields, data, audience, search]);
-
-  const aiCount = useMemo(
-    () => fields.filter((f) => data.questionMeta[f]?.activeOnly).length,
-    [fields, data],
-  );
-  const generalCount = fields.length - aiCount;
+  }, [fields, data, search]);
 
   return (
     <section
@@ -369,7 +353,7 @@ function AllResponses({ data, page }: { data: Data; page: string }) {
 
       {isOpen && (
         <div className="all-responses-body">
-          {/* Toolbar: Search and Filter Pills */}
+          {/* Toolbar: Search input and question count */}
           <div className="all-responses-toolbar">
             <div className="all-responses-search">
               <Search size={15} className="search-icon" />
@@ -392,30 +376,8 @@ function AllResponses({ data, page }: { data: Data; page: string }) {
               )}
             </div>
 
-            <div className="all-responses-pills" role="tablist">
-              <button
-                type="button"
-                className={`pill-btn ${audience === "all" ? "pill-btn--active" : ""}`}
-                onClick={() => setAudience("all")}
-              >
-                Hamısı ({fields.length})
-              </button>
-              <button
-                type="button"
-                className={`pill-btn ${audience === "ai" ? "pill-btn--active" : ""}`}
-                onClick={() => setAudience("ai")}
-              >
-                <Sparkles size={13} />
-                AI istifadəçiləri ({aiCount})
-              </button>
-              <button
-                type="button"
-                className={`pill-btn ${audience === "general" ? "pill-btn--active" : ""}`}
-                onClick={() => setAudience("general")}
-              >
-                <Users size={13} />
-                Bütün respondentlər ({generalCount})
-              </button>
+            <div className="all-responses-count-badge">
+              <span>{filteredFields.length} sual göstərilir</span>
             </div>
           </div>
 
@@ -441,17 +403,8 @@ function AllResponses({ data, page }: { data: Data; page: string }) {
                           #{String(originalIndex + 1).padStart(2, "0")}
                         </span>
                         <div className="response-card__tags">
-                          {meta.activeOnly ? (
-                            <span className="tag tag--ai">
-                              <Sparkles size={11} /> AI istifadəçiləri
-                            </span>
-                          ) : (
-                            <span className="tag tag--general">
-                              <Users size={11} /> Bütün respondentlər
-                            </span>
-                          )}
                           <span className="tag tag--stat">
-                            n={meta.base} respondent · {meta.answered} cavab
+                            baza: n={meta.base} respondent · {meta.answered} cavab
                             {meta.missing > 0
                               ? ` · ${meta.missing} cavabsız`
                               : ""}
@@ -537,10 +490,7 @@ function AllResponses({ data, page }: { data: Data; page: string }) {
               <button
                 type="button"
                 className="reset-search-btn"
-                onClick={() => {
-                  setSearch("");
-                  setAudience("all");
-                }}
+                onClick={() => setSearch("")}
               >
                 Axtarışı sıfırla
               </button>
@@ -563,7 +513,7 @@ function ToolCards({ rows }: { rows: Row[] }) {
               {index === 0 ? "1-ci" : index === 1 ? "2-ci" : "3-cü"}
               <small>yer</small>
             </span>
-            <span className="tag">İstifadəçi seçimi</span>
+            <span className="tag">Respondent seçimi</span>
           </div>
           <div className="podium-name">
             <Logo name={row.label} large />
@@ -574,7 +524,7 @@ function ToolCards({ rows }: { rows: Row[] }) {
           </div>
           <strong className="podium-value">{pct(row.percent)}</strong>
           <p className="podium-base">
-            {row.count} / {row.base} AI istifadəçisi
+            {row.count} / {row.base} respondent
           </p>
         </article>
       ))}
@@ -732,10 +682,10 @@ function Methodology({
         <div className="method-copy">
           <h3>İki fərqli baza</h3>
           <p>
-            Alət, məqsəd, tezlik, təcrübə, etibar və davranış sualları yalnız AI
-            istifadəçilərinə əsaslanır. Demoqrafiya, sosial seçimlər və ödəniş
-            istəyi bütün respondentlər üzrə hesablanır. Filtrlər hər iki bazanı
-            yeniləyir.
+            Alət, məqsəd, tezlik, təcrübə, etibar və davranış sualları yalnız
+            AI-dan istifadə etdiyini bildirən respondentlərə əsaslanır.
+            Demoqrafiya, sosial seçimlər və ödəniş istəyi bütün respondentlər
+            üzrə hesablanır. Filtrlər hər iki bazanı yeniləyir.
           </p>
           <h3>Çoxseçimli cavablar</h3>
           <p>
@@ -1100,7 +1050,7 @@ export default function App() {
                 <InfoBubble label="Filtrlər necə işləyir?">
                   Bu dörd filtr bütün səhifələrin məlumatlarını və CSV
                   hesabatını birlikdə dəyişir. Baza seçilmiş respondentlərdir;
-                  aktiv istifadəçi sualları həmin nümunədəki AI istifadəçilərini
+                  müvafiq suallar AI istifadə edən respondentlərin payını
                   göstərir. Bir neçə filtr birlikdə tətbiq olunur. Sıfırla bütün
                   seçimləri silir.
                 </InfoBubble>
@@ -1182,14 +1132,14 @@ export default function App() {
                   <span>
                     <Users size={14} />
                     {activeOnlyPage
-                      ? `${data.kpis.n_ai} AI istifadəçisi`
+                      ? `${data.kpis.n_ai} respondent (AI istifadə edən)`
                       : `${data.kpis.n_total} respondent`}{" "}
                     bu görünüşün əsas bazasıdır.
                   </span>
                   <InfoBubble label="Baza nədir?">
                     Baza faizin hesablandığı respondent sayıdır. Məsələn, 54 /
-                    108 = 50%. Bu seçimdə {data.kpis.n_total} respondent və
-                    onların içində {data.kpis.n_ai} AI istifadəçisi var.
+                    108 = 50%. Bu seçimdə cəmi {data.kpis.n_total} respondent və
+                    onların içində {data.kpis.n_ai} nəfər AI istifadə edən var.
                     Müxtəlif bazalara aid faizləri toplamaq və ya eyni insan
                     sayları kimi oxumaq olmaz.
                   </InfoBubble>
@@ -1200,8 +1150,9 @@ export default function App() {
                     <div className="sample-warning">
                       <CircleHelp size={17} />
                       <span>
-                        Seçilmiş nümunədə AI istifadəçisi yoxdur. Bu bölmənin
-                        sualları yalnız AI istifadəçilərinə verilib.
+                        Seçilmiş nümunədə AI istifadə edən respondent yoxdur.
+                        Bu bölmənin sualları yalnız AI-dan istifadə etdiyini
+                        bildirən respondentlərə ünvanlanıb.
                       </span>
                       <button
                         onClick={() =>
@@ -1249,7 +1200,7 @@ export default function App() {
                           data.trustAnswers ? fmt(data.kpis.avg_trust, 2) : "—"
                         }
                         suffix="/ 5"
-                        detail={`${data.trustAnswers} AI istifadəçisinin cavabı`}
+                        detail={`${data.trustAnswers} respondentin qiymətləndirməsi`}
                         badge="Etibar"
                         tone="amber"
                       />
@@ -1289,7 +1240,7 @@ export default function App() {
                             <h3>Hər gün AI istifadə edir</h3>
                             <p>
                               {data.analyses.summary.daily} / {data.kpis.n_ai}{" "}
-                              AI istifadəçisi · gündə bir və ya bir neçə dəfə.
+                              respondent · gündə bir və ya bir neçə dəfə.
                             </p>
                           </div>
                           <div>
@@ -1336,7 +1287,7 @@ export default function App() {
                     <div className="presentation-grid tool-details-grid">
                       <Panel
                         title="Alətlərin tam müqayisəsi"
-                        subtitle={`Bütün alət və kateqoriyalar · AI istifadəçiləri: n=${data.kpis.n_ai}`}
+                        subtitle={`Bütün alət və kateqoriyalar · n=${data.kpis.n_ai} respondent`}
                         icon={BarChart3}
                         help={panelHelp["Ən çox istifadə olunan AI alətləri"]}
                       >
@@ -1347,8 +1298,8 @@ export default function App() {
                                 <tr>
                                   <th scope="col">Alət</th>
                                   <th scope="col">Şirkət / kateqoriya</th>
-                                  <th scope="col">İstifadəçi sayı</th>
-                                  <th scope="col">İstifadəçi payı</th>
+                                  <th scope="col">Respondent sayı</th>
+                                  <th scope="col">Seçim payı</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1390,7 +1341,7 @@ export default function App() {
                         title="Əsas istifadə məqsədləri"
                         subtitle={`Ən çox seçilən 4 məqsəd · n=${data.kpis.n_ai}`}
                         icon={GraduationCap}
-                        help="Bir respondent bir neçə məqsəd seçə bilər. Hər faiz seçilmiş AI istifadəçilərinin həmin məqsədi seçən hissəsidir."
+                        help="Bir respondent bir neçə məqsəd seçə bilər. Hər faiz AI-dan istifadə edən respondentlərin həmin məqsədi seçən hissəsidir."
                       >
                         <Bars rows={data.distributions.purposes.slice(0, 4)} />
                       </Panel>
@@ -1452,9 +1403,9 @@ export default function App() {
                       </Panel>
                     </div>
                     <p className="presentation-note">
-                      Etibar balı yalnız AI istifadəçilərinə, sosial seçimlər
-                      isə bütün respondentlərə əsaslanır. Etibar AI cavablarının
-                      faktiki düzgünlüyünü ölçmür.
+                      Etibar balı yalnız AI-dan istifadə edən respondentlərə,
+                      sosial seçimlər isə bütün respondentlərə əsaslanır. Etibar
+                      AI cavablarının faktiki düzgünlüyünü ölçmür.
                     </p>
                   </>
                 )}

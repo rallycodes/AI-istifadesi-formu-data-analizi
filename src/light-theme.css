@@ -880,28 +880,10 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
-:root:not(.dark) .all-responses-pills {
-  background: #ffffff;
-  border-color: #e2e8f0;
-}
-
-:root:not(.dark) .pill-btn {
-  color: #64748b;
-}
-
-:root:not(.dark) .pill-btn:hover {
-  color: #0f172a;
+:root:not(.dark) .all-responses-count-badge {
   background: #f1f5f9;
-}
-
-:root:not(.dark) .pill-btn--active {
-  background: #6366f1;
-  color: #ffffff;
-}
-
-:root:not(.dark) .pill-btn--active:hover {
-  background: #4f46e5;
-  color: #ffffff;
+  border-color: #e2e8f0;
+  color: #475569;
 }
 
 :root:not(.dark) .response-card {
@@ -919,18 +901,6 @@
   background: #ede9fe;
   color: #6366f1;
   border-color: #ddd6fe;
-}
-
-:root:not(.dark) .tag--ai {
-  background: #ecfdf5;
-  color: #059669;
-  border-color: #a7f3d0;
-}
-
-:root:not(.dark) .tag--general {
-  background: #f1f5f9;
-  color: #475569;
-  border-color: #e2e8f0;
 }
 
 :root:not(.dark) .tag--stat {
