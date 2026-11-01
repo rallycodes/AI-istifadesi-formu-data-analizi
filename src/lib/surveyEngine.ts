@@ -349,9 +349,11 @@ function orderRows(rows: Row[], field: string): Row[] {
 
 function makeDistribution(values: string[], base: number): Row[] {
   const counts: Record<string, number> = {};
-  for (const v of values) {
-    const key = v || 'Cavab yoxdur';
+  const firstSeen: Record<string, number> = {};
+  for (let i = 0; i < values.length; i++) {
+    const key = values[i] || 'Cavab yoxdur';
     counts[key] = (counts[key] || 0) + 1;
+    if (firstSeen[key] === undefined) firstSeen[key] = i;
   }
   const rows: Row[] = Object.entries(counts).map(([label, count]) => ({
     label,
@@ -359,7 +361,10 @@ function makeDistribution(values: string[], base: number): Row[] {
     base,
     percent: base > 0 ? Math.round((count / base) * 1000000) / 10000 : 0,
   }));
-  return rows.sort((a, b) => b.count - a.count);
+  return rows.sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return (firstSeen[a.label] ?? 0) - (firstSeen[b.label] ?? 0);
+  });
 }
 
 function computeKpis(frame: SurveyRecord[], active: SurveyRecord[], tools: { alet: string; respondent_id: number }[], purposes: { meqsed: string; respondent_id: number }[]) {
