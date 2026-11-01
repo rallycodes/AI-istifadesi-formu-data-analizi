@@ -12,6 +12,7 @@ import {
   Filter,
   GraduationCap,
   HeartHandshake,
+  Layers,
   LayoutDashboard,
   Loader2,
   Menu,
@@ -19,7 +20,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   RefreshCw,
+  Search,
   ShieldCheck,
+  Sparkles,
   Sun,
   Users,
   X,
@@ -292,72 +295,260 @@ const questionGroups: Record<string, string[]> = {
 };
 
 function AllResponses({ data, page }: { data: Data; page: string }) {
+  const [isOpen, setIsOpen] = useState(true);
+  const [search, setSearch] = useState("");
+  const [audience, setAudience] = useState<"all" | "ai" | "general">("all");
+
+  const fields = questionGroups[page] || [];
+
+  const filteredFields = useMemo(() => {
+    return fields.filter((field) => {
+      const meta = data.questionMeta[field];
+      if (!meta) return false;
+
+      // Audience filter
+      if (audience === "ai" && !meta.activeOnly) return false;
+      if (audience === "general" && meta.activeOnly) return false;
+
+      // Search filter
+      if (search.trim()) {
+        const query = search.toLowerCase().trim();
+        const questionMatch = meta.question.toLowerCase().includes(query);
+        const optionsMatch = (data.distributions[field] || []).some((r) =>
+          r.label.toLowerCase().includes(query),
+        );
+        if (!questionMatch && !optionsMatch) return false;
+      }
+      return true;
+    });
+  }, [fields, data, audience, search]);
+
+  const aiCount = useMemo(
+    () => fields.filter((f) => data.questionMeta[f]?.activeOnly).length,
+    [fields, data],
+  );
+  const generalCount = fields.length - aiCount;
+
   return (
-    <details className="all-responses" key={page}>
-      <summary>
-        <span>
-          Bütün cavablar{" "}
-          <small>
-            {questionGroups[page].length} sual · təqdimatdan sonra ətraflı baxış
-          </small>
-        </span>
-        <ChevronDown size={17} />
-      </summary>
-      <div className="response-questions">
-        {questionGroups[page].map((field) => {
-          const meta = data.questionMeta[field];
-          const rows = data.distributions[field];
-          return (
-            <section
-              className="response-question"
-              data-question={field}
-              key={field}
-            >
-              <h2>{meta.question}</h2>
-              <p>
-                {meta.activeOnly ? "AI istifadəçiləri" : "Bütün respondentlər"}{" "}
-                · baza: n={meta.base} · {meta.answered} cavab · {meta.missing}{" "}
-                cavabsız
-                {meta.multiple
-                  ? " · çoxseçimli: faizlər 100%-dən çox toplana bilər"
-                  : ""}
-              </p>
-              {rows.length ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Cavab</th>
-                      <th scope="col">Say</th>
-                      <th scope="col">Pay</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.label}>
-                        <th scope="row">
-                          {field === "etibar" &&
-                          Number.isFinite(Number(row.label))
-                            ? `${Number(row.label)} / 5`
-                            : row.label}
-                        </th>
-                        <td>
-                          {row.count} / {row.base}
-                        </td>
-                        <td>{pct(row.percent)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="response-empty">
-                  Bu sual üçün uyğun cavab yoxdur.
-                </p>
+    <section
+      className="all-responses-section"
+      aria-label="Bütün cavablar və detallı bölgü"
+    >
+      <button
+        type="button"
+        className={`all-responses-toggle ${isOpen ? "all-responses-toggle--open" : ""}`}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+      >
+        <div className="all-responses-toggle__left">
+          <span className="all-responses-icon">
+            <Layers size={20} />
+          </span>
+          <div>
+            <div className="all-responses-title-row">
+              <h3>Bütün cavablar və detallı bölgü</h3>
+              <span className="all-responses-badge">{fields.length} sual</span>
+            </div>
+            <p className="all-responses-subtitle">
+              Sorğudakı hər sual üzrə respondentlərin tam cavab paylanması,
+              saylar və faiz göstəriciləri.
+            </p>
+          </div>
+        </div>
+
+        <div className="all-responses-toggle__right">
+          <span className="toggle-label">
+            {isOpen ? "Bölməni bağla" : "Ətraflı göstər"}
+          </span>
+          <ChevronDown
+            size={18}
+            className={`toggle-chevron ${isOpen ? "toggle-chevron--rotated" : ""}`}
+          />
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="all-responses-body">
+          {/* Toolbar: Search and Filter Pills */}
+          <div className="all-responses-toolbar">
+            <div className="all-responses-search">
+              <Search size={15} className="search-icon" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Suallarda və ya cavablarda axtar..."
+                aria-label="Suallarda axtar"
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="clear-search-btn"
+                  onClick={() => setSearch("")}
+                  aria-label="Axtarışı təmizlə"
+                >
+                  <X size={14} />
+                </button>
               )}
-            </section>
-          );
-        })}
-      </div>
-    </details>
+            </div>
+
+            <div className="all-responses-pills" role="tablist">
+              <button
+                type="button"
+                className={`pill-btn ${audience === "all" ? "pill-btn--active" : ""}`}
+                onClick={() => setAudience("all")}
+              >
+                Hamısı ({fields.length})
+              </button>
+              <button
+                type="button"
+                className={`pill-btn ${audience === "ai" ? "pill-btn--active" : ""}`}
+                onClick={() => setAudience("ai")}
+              >
+                <Sparkles size={13} />
+                AI istifadəçiləri ({aiCount})
+              </button>
+              <button
+                type="button"
+                className={`pill-btn ${audience === "general" ? "pill-btn--active" : ""}`}
+                onClick={() => setAudience("general")}
+              >
+                <Users size={13} />
+                Bütün respondentlər ({generalCount})
+              </button>
+            </div>
+          </div>
+
+          {/* Question Cards Grid */}
+          {filteredFields.length > 0 ? (
+            <div className="all-responses-grid">
+              {filteredFields.map((field) => {
+                const meta = data.questionMeta[field];
+                const rows = data.distributions[field] || [];
+                const originalIndex = fields.indexOf(field);
+                const maxCount =
+                  rows.length > 0 ? Math.max(...rows.map((r) => r.count)) : 0;
+
+                return (
+                  <article
+                    className="response-card"
+                    key={field}
+                    data-question={field}
+                  >
+                    <header className="response-card__header">
+                      <div className="response-card__top">
+                        <span className="response-card__num">
+                          #{String(originalIndex + 1).padStart(2, "0")}
+                        </span>
+                        <div className="response-card__tags">
+                          {meta.activeOnly ? (
+                            <span className="tag tag--ai">
+                              <Sparkles size={11} /> AI istifadəçiləri
+                            </span>
+                          ) : (
+                            <span className="tag tag--general">
+                              <Users size={11} /> Bütün respondentlər
+                            </span>
+                          )}
+                          <span className="tag tag--stat">
+                            n={meta.base} respondent · {meta.answered} cavab
+                            {meta.missing > 0
+                              ? ` · ${meta.missing} cavabsız`
+                              : ""}
+                          </span>
+                          {meta.multiple && (
+                            <span className="tag tag--multiple">
+                              Çoxseçimli
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <h4 className="response-card__title">{meta.question}</h4>
+                    </header>
+
+                    {rows.length > 0 ? (
+                      <div className="response-card__bars">
+                        {rows.map((row) => {
+                          const isLeader =
+                            maxCount > 0 && row.count === maxCount;
+                          const displayLabel =
+                            field === "etibar" &&
+                            Number.isFinite(Number(row.label))
+                              ? `${Number(row.label)} / 5 bal`
+                              : row.label;
+
+                          return (
+                            <div
+                              key={row.label}
+                              className={`response-bar-row ${isLeader ? "response-bar-row--leader" : ""}`}
+                            >
+                              <div className="response-bar-row__meta">
+                                <div className="response-bar-row__label-group">
+                                  <span className="response-bar-row__label">
+                                    {displayLabel}
+                                  </span>
+                                  {isLeader && (
+                                    <span className="leader-pill">
+                                      Lider seçim
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="response-bar-row__numbers">
+                                  <span className="response-bar-row__count">
+                                    {row.count} / {row.base}
+                                  </span>
+                                  <span className="response-bar-row__percent">
+                                    {pct(row.percent)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="response-bar-row__track">
+                                <div
+                                  className={`response-bar-row__fill ${isLeader ? "response-bar-row__fill--leader" : ""}`}
+                                  style={{
+                                    width: `${Math.min(100, Math.max(0, row.percent))}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="response-card__empty">
+                        <Database size={20} />
+                        <p>Bu filtr parametri üçün cavab tapılmadı.</p>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="all-responses-empty">
+              <Search size={28} />
+              <h4>Axtarışa uyğun sual tapılmadı</h4>
+              <p>
+                &ldquo;{search}&rdquo; sorğusu üzrə heç bir sual və ya cavab
+                variantı uyğun gəlmir.
+              </p>
+              <button
+                type="button"
+                className="reset-search-btn"
+                onClick={() => {
+                  setSearch("");
+                  setAudience("all");
+                }}
+              >
+                Axtarışı sıfırla
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 

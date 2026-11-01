@@ -816,82 +816,186 @@
    ALL RESPONSES DISCLOSURE ACCORDION
    ========================================================================== */
 
-:root:not(.dark) .all-responses {
-  border-color: var(--line);
+/* ==========================================================================
+   ALL RESPONSES — LIGHT THEME SPECIFIC POLISH
+   ========================================================================== */
+
+:root:not(.dark) .all-responses-toggle {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-:root:not(.dark) .all-responses > summary {
+:root:not(.dark) .all-responses-toggle:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+:root:not(.dark) .all-responses-toggle--open {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+:root:not(.dark) .all-responses-icon {
+  background: #ede9fe;
+  color: #6366f1;
+  border-color: #ddd6fe;
+}
+
+:root:not(.dark) .all-responses-title-row h3 {
   color: #0f172a;
-  font-size: 13px;
-  font-weight: 600;
-  transition: color 0.15s ease;
 }
 
-:root:not(.dark) .all-responses > summary:hover {
+:root:not(.dark) .all-responses-badge {
+  background: #ede9fe;
+  color: #6366f1;
+  border-color: #c7d2fe;
+}
+
+:root:not(.dark) .all-responses-subtitle {
+  color: #64748b;
+}
+
+:root:not(.dark) .toggle-label {
+  color: #6366f1;
+}
+
+:root:not(.dark) .toggle-chevron {
+  color: #6366f1;
+}
+
+:root:not(.dark) .all-responses-body {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+:root:not(.dark) .all-responses-search input {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+:root:not(.dark) .all-responses-search input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+:root:not(.dark) .all-responses-pills {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+:root:not(.dark) .pill-btn {
+  color: #64748b;
+}
+
+:root:not(.dark) .pill-btn:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+:root:not(.dark) .pill-btn--active {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+:root:not(.dark) .pill-btn--active:hover {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+:root:not(.dark) .response-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+}
+
+:root:not(.dark) .response-card:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 4px 16px -2px rgba(99, 102, 241, 0.1);
+}
+
+:root:not(.dark) .response-card__num {
+  background: #ede9fe;
+  color: #6366f1;
+  border-color: #ddd6fe;
+}
+
+:root:not(.dark) .tag--ai {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+:root:not(.dark) .tag--general {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+:root:not(.dark) .tag--stat {
+  color: #64748b;
+}
+
+:root:not(.dark) .tag--multiple {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+:root:not(.dark) .response-card__title {
+  color: #0f172a;
+}
+
+:root:not(.dark) .response-bar-row:hover {
+  background: #f8fafc;
+}
+
+:root:not(.dark) .response-bar-row--leader {
+  background: #faf5ff;
+}
+
+:root:not(.dark) .response-bar-row__label {
+  color: #1e293b;
+}
+
+:root:not(.dark) .leader-pill {
+  background: #ede9fe;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+
+:root:not(.dark) .response-bar-row__count {
+  color: #64748b;
+}
+
+:root:not(.dark) .response-bar-row__percent {
+  color: #0f172a;
+}
+
+:root:not(.dark) .response-bar-row--leader .response-bar-row__percent {
   color: #6d28d9;
 }
 
-:root:not(.dark) .all-responses > summary small {
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 400;
+:root:not(.dark) .response-bar-row__track {
+  background: #e2e8f0;
 }
 
-:root:not(.dark) .response-question {
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: var(--panel-shadow);
-  padding: 18px;
+:root:not(.dark) .response-bar-row__fill {
+  background: #94a3b8;
 }
 
-:root:not(.dark) .response-question h2 {
-  color: #0f172a;
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.5;
+:root:not(.dark) .response-bar-row__fill--leader {
+  background: linear-gradient(90deg, #6366f1, #7c3aed);
 }
 
-:root:not(.dark) .response-question > p {
-  color: #64748b;
-  font-size: 11px;
+:root:not(.dark) .reset-search-btn {
+  background: #6366f1;
+  color: #ffffff;
 }
 
-:root:not(.dark) .response-question table {
-  border-collapse: collapse;
-}
-
-:root:not(.dark) .response-question thead {
-  background: #f8fafc;
-  border-bottom: 1px solid var(--line);
-}
-
-:root:not(.dark) .response-question thead th {
-  color: #475569;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 8px 10px;
-}
-
-:root:not(.dark) .response-question tbody th {
-  color: #1e293b;
-  font-size: 12px;
-  font-weight: 500;
-  border-bottom: 1px solid #f1f5f9;
-  padding: 10px;
-}
-
-:root:not(.dark) .response-question tbody td {
-  color: #334155;
-  font-size: 11px;
-  border-bottom: 1px solid #f1f5f9;
-  padding: 10px;
-}
-
-:root:not(.dark) .response-question tbody td:last-child {
-  font-weight: 600;
-  color: #0f172a;
-  font-feature-settings: 'tnum';
+:root:not(.dark) .reset-search-btn:hover {
+  background: #4f46e5;
 }
 
 /* ==========================================================================
@@ -1011,16 +1115,8 @@
   :root:not(.dark) .podium-value {
     font-size: 26px;
   }
-  :root:not(.dark) .response-question {
-    padding: 14px;
-  }
-  :root:not(.dark) .response-question h2 {
-    font-size: 13px;
-  }
-  :root:not(.dark) .response-question th,
-  :root:not(.dark) .response-question td {
-    font-size: 11px;
-    padding: 8px;
+  :root:not(.dark) .response-card {
+    padding: 16px;
   }
   :root:not(.dark) .sidebar.open {
     background: #ffffff;
