@@ -7,7 +7,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "server": "python server.py",
-    "test": "python -m unittest test_dashboard_api.py"
+    "test": "python -m unittest test_dashboard_api.py test_dsa.py"
   },
   "keywords": [],
   "author": "",
