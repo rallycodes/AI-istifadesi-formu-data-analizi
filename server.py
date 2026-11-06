@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 import pandas as pd
 import data_utils as data
 from analytics import additional_analyses, ordered
+from data_structures import load_survey_dsa
 
 ROOT = Path(__file__).resolve().parent
 FILTERS = ('yas', 'mesguliyyet', 'sahe', 'ai_istifade')
@@ -104,7 +105,43 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         route = urlparse(self.path)
-        if route.path in ('/api/dashboard', '/api/export'):
+        if route.path == '/api/dsa':
+            try:
+                dsa = load_survey_dsa(str(ROOT / 'data.csv'))
+                data_summary = {
+                    'singly_linked_list': {
+                        'description': 'Sorğunun suallarının ardıcıl saxlanması',
+                        'size': len(dsa['questions_list']),
+                        'sample_questions': dsa['questions_list'].to_list()[:5]
+                    },
+                    'doubly_linked_list': {
+                        'description': 'Respondentlər arasında irəli/geri naviqasiya',
+                        'size': len(dsa['respondents_dll']),
+                        'first_respondent': dsa['respondents_dll'].get_current()
+                    },
+                    'hash_table': {
+                        'description': 'Respondent ID üzrə O(1) ani axtarış cədvəli',
+                        'size': len(dsa['respondents_hash']),
+                        'sample_lookup_RESP_001': dsa['respondents_hash'].get('RESP-001')
+                    },
+                    'binary_search_tree': {
+                        'description': 'Etibar balı üzrə BST sıralaması və aralıq axtarışı',
+                        'inorder_distribution': dsa['trust_bst'].inorder(),
+                        'high_trust_4_to_5_count': len(dsa['trust_bst'].find_range(4.0, 5.0))
+                    }
+                }
+                body = json.dumps(data_summary, ensure_ascii=False, indent=2).encode('utf-8')
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception as e:
+                body = json.dumps({'error': str(e)}).encode('utf-8')
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(body)
+        elif route.path in ('/api/dashboard', '/api/export'):
             try:
                 payload = dashboard(parse_qs(route.query))
                 if route.path == '/api/export':
