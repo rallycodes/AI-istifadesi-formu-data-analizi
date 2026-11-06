@@ -4,4 +4,7 @@ __pycache__/
 *.log
 .impeccable/
 .streamlit/secrets.toml
+Teqdimat_Plani_DSA.pdf
+generate_pdf.py
+teqdimat_plani.html
 
